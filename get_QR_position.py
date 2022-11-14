@@ -7,7 +7,9 @@ cap = cv2.VideoCapture(0)
 
 # 전역변수 설정
 global QR_Position
-QR_Position = (0, 0)
+
+
+x, y, w, h = 0, 0, 0, 0
 
 # 아두이노 시리얼통신 설정
 arduino_port = "COM6"
@@ -38,12 +40,11 @@ while True:
     if key == ord('q'):
         break
     # QRcode 중앙좌표 읽어오기
-    QR_Position = (x + (h / 2), y + (w / 2))
+    QR_Position = str([x + (h / 2)])+str([y + (w / 2)])
     print(QR_Position)  # print the center of the QR code
     # 아두이노에서 요청이 오면 좌표값 보내주기
     if arduino_serial.readable():
         if arduino_serial.readline().decode("utf-8"):
             arduino_serial.write(QR_Position.encode())
-
 cap.release()
 cv2.destroyAllWindows()
