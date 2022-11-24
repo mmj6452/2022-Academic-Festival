@@ -30,9 +30,7 @@ while True:
     cv2.rectangle(frame, roi, (255, 255, 255), cv2.FILLED)# 동영상에 하얀마스크 씌우기
     #cv2.rectangle(frame, roi, (0, 0, 0), cv2.FILLED)  # 동영상에 까만마스크 씌우기
     bgr=cv2.split(frame)#프레임을 3개 채널로 분리
-    frame1 = bgr[0]#Blue채널
-    frame2 = bgr[1]#Green채널
-    frame3 = bgr[2]#Red채널
+    cv2.imshow(title,bgr)
 
     minvalue_B, maxvalue_B, min_loc_B, max_loc_B = cv2.minMaxLoc(frame1)
     minvalue_G, maxvalue_G, min_loc_G, max_loc_G = cv2.minMaxLoc(frame2)
@@ -42,11 +40,13 @@ while True:
     G_histogram = cv2.calcHist([frame2], [0], None, [256], [0, 256])
     B_histogram = cv2.calcHist([frame1], [0], None, [256], [0, 256])
     
-    R_low_sum = np.sum(R_histogram[0:50])
-    G_low_sum = np.sum(G_histogram[0:50])
-    B_low_sum = np.sum(B_histogram[0:50])
+    R_low_sum = np.sum(R_histogram[0:80])
+    G_low_sum = np.sum(G_histogram[0:80])
+    B_low_sum = np.sum(B_histogram[0:80])
     
     low_sum = int((R_low_sum + G_low_sum + B_low_sum)/3)
+    
+    
     
     print("R_histogram = ",R_low_sum)
 
