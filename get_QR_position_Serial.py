@@ -10,20 +10,19 @@ cap_2 = cv2.VideoCapture(1)
 # 전역변수 설정
 global QR_Position
 
-
 x, y, w, h = 0, 0, 0, 0
 
 # 아두이노 시리얼통신 설정
-'''
+
 pi_port = "COM6"
 pi_serial = serial.Serial(pi_port, 115200, timeout=1)
-'''
+
 while True:
     # 프레임 읽어오기
     ret, frame = cap_1.read()
     if not ret:
         continue
-    ret_2 , frame_2 = cap_2.read()
+    ret_2, frame_2 = cap_2.read()
     if not ret_2:
         continue
     # 프레임 그레이스케일로 저장
@@ -46,20 +45,19 @@ while True:
     if key == ord('q'):
         break
     # QRcode 중앙좌표 읽어오기
-    QR_Position = str([x + (h / 2)])+str([y + (w / 2)])
+    QR_Position = str([x + (h / 2)]) + str([y + (w / 2)])
     print(QR_Position)  # print the center of the QR code5
     # 아두이노에서 요청이 오면 좌표값 보내주기
     change = onchange(frame)
     cv2.imshow("test", frame_2)
-    
-    '''
+
     if change >= 50:
         pi_serial.write("stop".encode())
         print("send to arduino")
-        
+
     if pi_serial.readable():
         if pi_serial.readline().decode("utf-8") == "give me the position":
             pi_serial.write(QR_Position.encode())
-'''
+
 cap_1.release()
 cv2.destroyAllWindows()
