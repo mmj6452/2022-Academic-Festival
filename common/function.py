@@ -1,6 +1,5 @@
-import numpy as np
-import pyzbar.pyzbar as pyzbar
 import cv2
+import numpy as np
 
 
 # 카메라 480*640
@@ -29,12 +28,14 @@ def draw_histo(hist, shape=(200, 256)):
     return cv2.flip(hist_img, 0)
 
 
-# 프레임에서 무관심영역에서 움직이는 객채가 있는지 확인후 있다면 해당 변화를 수치화해서 반환
 def onchange(frame):
-    area_of_non_interest = [40, 40, 400, 400]
+    area_of_noninterest = [40, 40, 400, 400]
     mask = np.zeros((480, 640), np.uint8)
+    mask_1 = np.zeros((40, 400), np.uint8)
+    mask_2 = np.zeros((480, 40), np.uint8)
+    mask_3 = np.zeros((480, 200), np.uint8)
 
-    cv2.rectangle(frame, area_of_non_interest, (255, 255, 255), cv2.FILLED)  # 동영상에 하얀마스크 씌우기
+    cv2.rectangle(frame, area_of_noninterest, (255, 255, 255), cv2.FILLED)  # 동영상에 하얀마스크 씌우기
     b, g, r = cv2.split(frame)  # 프레임을 3개 채널로 분리
     B_histogram = cv2.calcHist([b], [0], None, [32], [0, 256])
     G_histogram = cv2.calcHist([g], [0], None, [32], [0, 256])
@@ -42,70 +43,17 @@ def onchange(frame):
     histo_sum = B_histogram + G_histogram + R_histogram
     histo_low_sum = np.sum(B_histogram[0:15]) + np.sum(G_histogram[0:15]) + np.sum(R_histogram[0:15])
     histogram_img = draw_histo(histo_sum)
-    histogram_img = cv2.resize(histogram_img, (400, 400), interpolation=cv2.INTER_AREA)  # 작동확인
+    histogram_img = cv2.resize(histogram_img, (400, 400), interpolation=cv2.INTER_AREA)  ##작동확인
 
-    # 마스크 만드는 부분 좀더 깔끔하게 수정함 이거 작동안되면 기존거로 변경바람
     mask[40:440, 40:440] = histogram_img
-    mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-    frame = cv2.subtract(frame, mask)
+    sum_1 = cv2.vconcat([mask_1, histogram_img])
+    sum_1 = cv2.vconcat([sum_1, mask_1])
+    sum_1 = cv2.hconcat([sum_1, mask_3])
+    sum_1 = cv2.hconcat([mask_2, sum_1])
+    sum_1 = cv2.cvtColor(sum_1, cv2.COLOR_GRAY2BGR)
+    frame = cv2.subtract(frame, sum_1)
 
     put_string(frame, 'histo_low_sum', (20, 30), histo_low_sum)
     cv2.imshow("change_detect", frame)
 
     return histo_low_sum
-
-
-# 프레임에서 QR을 찾아 해당 좌표값을 반환해주는 함수
-def detect_qr(frame):
-    x, y, w, h = 0, 0, 0, 0
-    # 그리드 원하는 그리드로 변경해주세요
-    decoded = pyzbar.decode(frame)
-    # 좌표값과 길이 높이값읽어오기
-    if decoded.data.decode("utf-8") is None:
-        return 0
-    for d in decoded:
-        x, y, w, h = d.rect
-        barcode_data = d.data.decode("utf-8")
-        # QR코드가 있는 곳에 네모그리기
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-        # QRcode 위치에 QRcode 정보 띄워주기
-        text = '%s' % barcode_data
-        cv2.putText(frame, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
-    cv2.imshow("test", frame)
-    # QRcode 중앙좌표 읽어오기
-    QR_Position = str([x + (h / 2)]) + str([y + (w / 2)])
-    print(QR_Position)  # print the center of the QR code5
-    return QR_Position
-
-
-# 프레임에서 그리드 순서대로 pose 만들어 배열에 순서대로 저장 0값이면 해당 pose QR이 없는것이고 0이 아니면 해당 좌표값이 저장될것
-# 잘라진 프레임에서의 좌표값임으로 해당 좌표값만큼 수정해주거나 단순히 possess 좌표를 찾아가게 만들것
-def find_coordinate(frame):
-    pos = [0, 0, 0, 0, 0, 0, 0, 0]
-    # 프레임을 각 그리드로 나눔 나중에 화면에 맞는 그리드로 변경바람
-    pos_1 = frame[40:140, 40: 240]
-    pos_2 = frame[140:240, 40: 240]
-    pos_3 = frame[240:340, 40: 240]
-    pos_4 = frame[340:440, 40: 240]
-    pos_5 = frame[40:140, 240: 440]
-    pos_6 = frame[140:240, 240: 440]
-    pos_7 = frame[240:340, 240: 440]
-    pos_8 = frame[340:440, 240, 440]
-    # 화면에 QR코드가 없으면 QR_position 0인지 아닌지 카메라가 없어서 확인불가 확인후 수정바람
-    if not detect_qr(pos_1) == 0:
-        pos[0] = detect_qr(pos_1)
-    if not detect_qr(pos_2) == 0:
-        pos[1] = detect_qr(pos_2)
-    if not detect_qr(pos_3) == 0:
-        pos[2] = detect_qr(pos_3)
-    if not detect_qr(pos_4) == 0:
-        pos[3] = detect_qr(pos_4)
-    if not detect_qr(pos_5) == 0:
-        pos[4] = detect_qr(pos_5)
-    if not detect_qr(pos_6) == 0:
-        pos[5] = detect_qr(pos_6)
-    if not detect_qr(pos_7) == 0:
-        pos[6] = detect_qr(pos_7)
-    if not detect_qr(pos_8) == 0:
-        pos[7] = detect_qr(pos_8)
-    return pos
