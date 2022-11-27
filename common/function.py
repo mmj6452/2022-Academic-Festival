@@ -56,13 +56,12 @@ def onchange(frame):
 
 
 # 프레임에서 QR을 찾아 해당 좌표값을 반환해주는 함수
-def detect_qr(frame):
+def detect_qr(frame , pos):
     x, y, w, h = 0, 0, 0, 0
     # 그리드 원하는 그리드로 변경해주세요
     decoded = pyzbar.decode(frame)
     # 좌표값과 길이 높이값읽어오기
-    if decoded.data.decode("utf-8") is None:
-        return 0
+    print(decoded)
     for d in decoded:
         x, y, w, h = d.rect
         barcode_data = d.data.decode("utf-8")
@@ -71,16 +70,20 @@ def detect_qr(frame):
         # QRcode 위치에 QRcode 정보 띄워주기
         text = '%s' % barcode_data
         cv2.putText(frame, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
-    cv2.imshow("test", frame)
+    cv2.imshow("test %s"%pos, frame)
     # QRcode 중앙좌표 읽어오기
     QR_Position = str([x + (h / 2)]) + str([y + (w / 2)])
-    print(QR_Position)  # print the center of the QR code5
-    return QR_Position
+    #barcode
+    
+    return frame, QR_Position,pos
+
 
 
 # 프레임에서 그리드 순서대로 pose 만들어 배열에 순서대로 저장 0값이면 해당 pose QR이 없는것이고 0이 아니면 해당 좌표값이 저장될것
 # 잘라진 프레임에서의 좌표값임으로 해당 좌표값만큼 수정해주거나 단순히 possess 좌표를 찾아가게 만들것
 def find_coordinate(frame):
+    pos_frame = [0, 0, 0, 0, 0, 0, 0, 0]
+    QR_Position= [0, 0, 0, 0, 0, 0, 0, 0]
     pos = [0, 0, 0, 0, 0, 0, 0, 0]
     # 프레임을 각 그리드로 나눔 나중에 화면에 맞는 그리드로 변경바람
     pos_1 = frame[40:140, 40: 240]
@@ -90,22 +93,41 @@ def find_coordinate(frame):
     pos_5 = frame[40:140, 240: 440]
     pos_6 = frame[140:240, 240: 440]
     pos_7 = frame[240:340, 240: 440]
-    pos_8 = frame[340:440, 240, 440]
+    pos_8 = frame[340:440, 240: 440]
     # 화면에 QR코드가 없으면 QR_position 0인지 아닌지 카메라가 없어서 확인불가 확인후 수정바람
-    if not detect_qr(pos_1) == 0:
-        pos[0] = detect_qr(pos_1)
-    if not detect_qr(pos_2) == 0:
-        pos[1] = detect_qr(pos_2)
-    if not detect_qr(pos_3) == 0:
-        pos[2] = detect_qr(pos_3)
-    if not detect_qr(pos_4) == 0:
-        pos[3] = detect_qr(pos_4)
-    if not detect_qr(pos_5) == 0:
-        pos[4] = detect_qr(pos_5)
-    if not detect_qr(pos_6) == 0:
-        pos[5] = detect_qr(pos_6)
-    if not detect_qr(pos_7) == 0:
-        pos[6] = detect_qr(pos_7)
-    if not detect_qr(pos_8) == 0:
-        pos[7] = detect_qr(pos_8)
-    return pos
+
+        
+        
+    pos_frame[0] ,QR_Position[0],pos[0]= detect_qr(pos_1,"pos_1")
+    cv2.rectangle(pos_frame[0], (0,0),(200,100), (100, 100, 100),1)
+    pos_frame[1],QR_Position[1],pos[1]= detect_qr(pos_2,"pos_2")
+    cv2.rectangle(pos_frame[1], (0,0),(200,100), (100, 100, 100),1)
+    pos_frame[2],QR_Position[2],pos[2]= detect_qr(pos_3,"pos_3")
+    cv2.rectangle(pos_frame[2], (0,0),(200,100), (100, 100, 100),1)
+    pos_frame[3],QR_Position[3],pos[3]= detect_qr(pos_4,"pos_4")
+    cv2.rectangle(pos_frame[3], (0,0),(200,100), (100, 100, 100),1)
+    pos_frame[4],QR_Position[4],pos[4]= detect_qr(pos_5,"pos_5")
+    cv2.rectangle(pos_frame[4], (0,0),(200,100), (100, 100, 100),1)
+    pos_frame[5],QR_Position[5],pos[5]= detect_qr(pos_6,"pos_6")
+    cv2.rectangle(pos_frame[5], (0,0),(200,100), (100, 100, 100),1)
+    pos_frame[6],QR_Position[6],pos[6]= detect_qr(pos_7,"pos_7")
+    cv2.rectangle(pos_frame[6], (0,0),(200,100), (100, 100, 100),1)
+    pos_frame[7],QR_Position[7],pos[7]= detect_qr(pos_8,"pos_8")
+    cv2.rectangle(pos_frame[7], (0,0),(200,100), (100, 100,100), 1)
+    
+    
+    result_1 = cv2.vconcat([pos_frame[0], pos_frame[1]])
+    result_1 = cv2.vconcat([result_1, pos_frame[2]])
+    result_1 = cv2.vconcat([result_1, pos_frame[3]])
+    
+    
+    result_2 = cv2.vconcat([pos_frame[4],pos_frame[5]])
+    result_2 = cv2.vconcat([result_2, pos_frame[6]])
+    result_2 = cv2.vconcat([result_2, pos_frame[7]])
+    
+    
+    
+    result_3 = cv2.hconcat([result_1, result_2])
+    cv2.imshow("result", result_3)
+    
+    return pos_frame, pos
